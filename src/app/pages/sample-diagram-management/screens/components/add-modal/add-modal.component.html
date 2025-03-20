@@ -1,0 +1,45 @@
+<p-dialog [header]="isEditMode ? 'Update Diagram' : TITLE.ADD_MODAL_TITLE" 
+    [modal]="true" 
+    [(visible)]="isVisible" 
+    [style]="{ width: '40rem' }"
+    (onHide)="onCancel()">
+    
+    <form [formGroup]="modalData">
+        <div class="flex align-items-center gap-3 mb-2 mt-3">
+            <label for="nameDiagram" class="font-semibold w-4">{{ TITLE.NAME_DIAGRAM }}</label>
+            <input pInputText id="nameDiagram" class="w-8" autocomplete="off" formControlName="name" required />
+        </div>
+        @if (modalData.get('name')?.errors?.required && modalData.get('name')?.touched) {
+        <div class="flex align-items-center mb-2">
+            <div class="w-4"></div>
+            <small class="p-error w-8 pl-3">{{ TITLE.NAME_NOT_NULL }}</small>
+        </div>
+        }
+
+        <!-- Show image preview in edit mode -->
+        @if (isEditMode && diagramToEdit?.image) {
+        <div class="flex align-items-center gap-3 mb-3 mt-3">
+            <label class="font-semibold w-4">Current Image</label>
+            <div class="w-8">
+                <img [src]="diagramToEdit.image" alt="Current Diagram" 
+                     style="max-width: 100%; max-height: 150px; object-fit: contain;">
+            </div>
+        </div>
+        }
+    </form>
+    
+    <div class="flex justify-content-end gap-2 mb-4 mt-4">
+        <p-button [label]="TITLE.CANCEL" severity="secondary" (click)="onCancel()" />
+        <p-button [label]="'Design Diagram'" (click)="openDiagramEditor()" />
+        <p-button [label]="isEditMode ? 'Update' : TITLE.ADD" (click)="onCreate()" />
+    </div>
+</p-dialog>
+
+<!-- Add the diagram modal component -->
+<vks-diagram-modal 
+    *ngIf="isVisibleDiagramEditor"
+    [diagramData]="diagramData"
+    [isEditNameDiagram]="false"
+    (cancel)="closeDiagramEditor()"
+    (saveDiagram)="saveDiagram($event)">
+</vks-diagram-modal>

@@ -1,0 +1,91 @@
+<div class="p-3 form-department">
+  <form
+    [formGroup]="departmentForm"
+    (ngSubmit)="onSubmit()"
+    class="department-form"
+  >
+    <div class="form-group">
+      <label for="name" class="form-label require">Ten Department</label>
+      <div class="form-input">
+        <input
+          id="name"
+          pInputText
+          formControlName="name"
+          [class.invalid]="isFieldInvalid('name')"
+        />
+        @if(isFieldInvalid('name')) {
+        <div>
+          <small class="p-error">Ten Department là bắt buộc</small>
+        </div>
+        }
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="description" class="form-label require">Description</label>
+      <div class="form-input">
+        <input
+          id="description"
+          pInputText
+          formControlName="description"
+          [class.invalid]="isFieldInvalid('description')"
+        />
+        @if(isFieldInvalid('description')) {
+        <div>
+          <small class="p-error">Description là bắt buộc</small>
+        </div>
+        }
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="code" class="form-label require">Code</label>
+      <div class="form-input">
+        <input
+          id="code"
+          pInputText
+          formControlName="code"
+          [class.invalid]="isFieldInvalid('code')"
+        />
+        @if(isFieldInvalid('code')) {
+        <div>
+          <small class="p-error">Code là bắt buộc</small>
+        </div>
+        }
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="active" class="form-label require">Active</label>
+      <div class="form-input">
+        <p-dropdown
+          id="active"
+          formControlName="active"
+          [options]="listActive"
+          [optionValue]="'value'"
+          [optionLabel]="'label'"
+          [class.invalid]="isFieldInvalid('active')"
+        >
+        </p-dropdown>
+        @if(isFieldInvalid('active')) {
+        <div>
+          <small class="p-error">Active là bắt buộc</small>
+        </div>
+        }
+      </div>
+    </div>
+
+    <div class="flex justify-content-end">
+      <button
+        pRipple
+        pButton
+        severity="secondary"
+        type="button"
+        label="Huỷ"
+        class="outline-none bg-none text-color mr-2"
+        (click)="onCloseModal()"
+      ></button>
+      <button pRipple pButton type="submit" label="Tạo"></button>
+    </div>
+  </form>
+</div>
