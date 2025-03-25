@@ -47,6 +47,7 @@ export class DepartmentManagementComponent {
   readonly KeyAction = KeyAction;
 
   defaultFilterData = DefaultFilterData;
+  allDepartments: IDepartmentInfo[] = [];
   listDepartment: IDepartmentInfo[] = [];
   totalRecords = 0;
   currentActivePage = 1;
@@ -74,7 +75,6 @@ export class DepartmentManagementComponent {
 
     this.handleGetDepartmentManagement();
     this.actionConfig = this.actionConfig.map((action) => {
-
       // return {
       //   ...action,
       //   command: (item: IDepartmentForm) => this.onEdit(item),
@@ -96,7 +96,7 @@ export class DepartmentManagementComponent {
   }
 
   getActionConfigForItem(item: IDepartmentInfo): any[] {
-    return this.actionConfig.map(action => ({
+    return this.actionConfig.map((action) => ({
       ...action,
       command: () => {
         if (action.key === KeyAction.UPDATE) {
@@ -104,7 +104,7 @@ export class DepartmentManagementComponent {
         } else if (action.key === KeyAction.REMOVE) {
           this.onDelete(item);
         }
-      }
+      },
     }));
   }
 
@@ -119,20 +119,89 @@ export class DepartmentManagementComponent {
     }
   }
 
-  onSearch(data: any) {
-    // You could implement filtering if API supports it
-    this.handleGetDepartmentManagement();
+  onSearch(searchText: string) {
+    if (!searchText || searchText.trim() === '') {
+      this.listDepartment = [...this.allDepartments];
+    } else {
+      const search = searchText.toLowerCase().trim();
+      
+      const activeTerms = ['active', 'true', 'hoạt động', 'hoat dong', '1'];
+      const inactiveTerms = ['inactive', 'false', 'không hoạt động', 'khong hoat dong', '0'];
+
+      const matchesActive = activeTerms.includes(search);
+      const matchesInactive = inactiveTerms.includes(search);
+      
+      this.listDepartment = this.allDepartments.filter(
+        (dept) =>
+          dept.name?.toLowerCase().includes(search) ||
+          dept.code?.toLowerCase().includes(search) ||
+          dept.description?.toLowerCase().includes(search) ||
+          (matchesActive && dept.active === true) ||
+          (matchesInactive && dept.active === false)
+      );
+    }
+    this.totalRecords = this.listDepartment.length;
   }
 
   onFilter(filter: IFilterForm) {
-    // You could implement filtering if API supports it
-    this.handleGetDepartmentManagement();
+    if (!this.allDepartments.length) {
+      console.warn('No departments to filter!');
+      return;
+    }
+
+    let filtered = [...this.allDepartments];
+
+    if (filter.name && filter.name.trim()) {
+      const nameSearch = filter.name.toLowerCase().trim();
+      const beforeCount = filtered.length;
+      filtered = filtered.filter((dept) =>
+        dept.name?.toLowerCase().includes(nameSearch)
+      );
+    }
+
+    if (filter.code && filter.code.trim()) {
+      const codeSearch = filter.code.toLowerCase().trim();
+      const beforeCount = filtered.length;
+      filtered = filtered.filter((dept) =>
+        dept.code?.toLowerCase().includes(codeSearch)
+      );
+    }
+
+    if (filter.active !== null && filter.active !== undefined) {
+      const beforeCount = filtered.length;
+      
+      let activeValue: boolean;
+
+      if (typeof filter.active === 'string') {
+        activeValue = filter.active === 'Hoat dong' || 
+                      filter.active === '1' || 
+                      filter.active === 'true';
+      } else if (typeof filter.active === 'number') {
+        activeValue = filter.active === 1;
+      } else {
+        activeValue = !!filter.active;
+      }
+
+      filtered = filtered.filter((dept) => dept.active === activeValue);
+    }
+
+    if (filter.description && filter.description.trim()) {
+      const descSearch = filter.description.toLowerCase().trim();
+      const beforeCount = filtered.length;
+      filtered = filtered.filter((dept) =>
+        dept.description?.toLowerCase().includes(descSearch)
+      );
+    }
+
+    this.listDepartment = filtered;
+    this.totalRecords = filtered.length;
+    this.currentActivePage = 1;
+
   }
 
   onEdit(item: IDepartmentForm & { id?: string | number }) {
-    console.log('Dữ liệu edit', item);
     if (!item.id) return;
-    
+
     this.loadingService.showLoading(true);
     this.departmentManagementHttpService
       .getDetailDepartment(item.id.toString())
@@ -144,20 +213,19 @@ export class DepartmentManagementComponent {
             name: department.name,
             code: department.code,
             description: department.description,
-            active: department.active
+            active: department.active,
           };
           this.isVisibleModal = true;
         },
         error: (error) => {
           console.error('Error fetching department details:', error);
-        }
+        },
       });
   }
 
   onDelete(item: IDepartmentForm & { id?: string | number }) {
-    console.log('Dữ liệu delete', item);
     if (!item.id) return;
-    
+
     if (confirm('Bạn có chắc chắn muốn xóa phòng ban này?')) {
       this.loadingService.showLoading(true);
       this.departmentManagementHttpService
@@ -169,13 +237,13 @@ export class DepartmentManagementComponent {
           },
           error: (error: any) => {
             console.error('Error deleting department:', error);
-          }
+          },
         });
     }
   }
 
   onOpenModal() {
-    this.selectedDepartment = null; // Reset for new creation
+    this.selectedDepartment = null; 
     this.isVisibleModal = true;
   }
 
@@ -190,11 +258,10 @@ export class DepartmentManagementComponent {
 
   onSubmit(formData: IDepartmentForm) {
     this.loadingService.showLoading(true);
-    
+
     let request: Observable<any>;
     const departmentId = (this.selectedDepartment as any)?.id?.toString();
-    
-    // Create department data conforming to IDepartmentInfo
+
     const departmentData: IDepartmentInfo = {
       name: formData.name,
       code: formData.code,
@@ -202,15 +269,17 @@ export class DepartmentManagementComponent {
       active: formData.active || true,
       id: formData.id || 0,
     };
-    
+
     if (this.selectedDepartment && departmentId) {
-      // Update existing department
-      request = this.departmentManagementHttpService.updateDepartment(departmentId, departmentData);
+      request = this.departmentManagementHttpService.updateDepartment(
+        departmentId,
+        departmentData
+      );
     } else {
-      // Create new department
-      request = this.departmentManagementHttpService.createDepartment(departmentData);
+      request =
+        this.departmentManagementHttpService.createDepartment(departmentData);
     }
-    
+
     request
       .pipe(finalize(() => this.loadingService.showLoading(false)))
       .subscribe({
@@ -221,27 +290,28 @@ export class DepartmentManagementComponent {
         },
         error: (error) => {
           console.error('Error saving department:', error);
-        }
+        },
       });
   }
 
   handleGetDepartmentManagement() {
-  this.loadingService.showLoading(true);
-  this.departmentManagementHttpService
-    .getListDepartmentManagement(
-      this.defaultFilterData,
-      this.pageSize,
-      this.currentActivePage
-    )
-    .pipe(finalize(() => this.loadingService.showLoading(false)))
-    .subscribe({
-      next: (data) => {
-        this.listDepartment = data.result.content;
-        this.totalRecords = data.result.totalRecords;
-      },
-      error: (error) => {
-        console.error('Error fetching departments:', error);
-      }
-    });
-}
+    this.loadingService.showLoading(true);
+    this.departmentManagementHttpService
+      .getListDepartmentManagement(
+        this.defaultFilterData,
+        this.pageSize,
+        this.currentActivePage
+      )
+      .pipe(finalize(() => this.loadingService.showLoading(false)))
+      .subscribe({
+        next: (data) => {
+          this.allDepartments = data.result.content;
+          this.listDepartment = [...this.allDepartments];
+          this.totalRecords = data.result.totalRecords;
+        },
+        error: (error) => {
+          console.error('Error fetching departments:', error);
+        },
+      });
+  }
 }
